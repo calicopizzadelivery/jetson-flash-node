@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+#
+# Host driver. Wraps docker compose so the same verbs work here and on a
+# remote node.
+#
+#   ./scripts/node build              build the image
+#   ./scripts/node probe              report what the container can reach
+#   ./scripts/node recovery           put the module into RCM
+#   ./scripts/node flash              run the L4T flash
+#   ./scripts/node power cycle
+#   ./scripts/node hdmi grab -o /out/screen.png
+#   ./scripts/node shell
+#
+set -euo pipefail
+
+REPO_ROOT=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)
+cd "${REPO_ROOT}"
+mkdir -p "${OUT_DIR:-./out}"
+
+compose() {
+  if docker compose version >/dev/null 2>&1; then docker compose "$@"
+  else docker-compose "$@"; fi
+}
+
+docker info >/dev/null 2>&1 || {
+  echo "error: cannot talk to the docker daemon." >&2
+  echo "       is the daemon running, and are you in the docker group?" >&2
+  exit 1; }
+
+case "${1:-help}" in
+  build) shift; compose build "$@" ;;
+  pull)  shift; compose pull "$@" ;;
+  ""|help|-h|--help)
+    compose run --rm jetson help ;;
+  *)
+    # --rm: these are one-shot commands, not a long-lived service.
+    compose run --rm jetson "$@" ;;
+esac

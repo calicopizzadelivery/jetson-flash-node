@@ -1,0 +1,32 @@
+# Jetson flashing / bench-management node.
+#
+# privileged is not decoration. flash.sh builds its images on loop devices and
+# talks to a module that re-enumerates with a new USB device number every time
+# it enters or leaves recovery, so neither a fixed --device nor a narrow
+# capability set survives a flash cycle.
+#
+# Be clear-eyed about what that buys: this removes the *interactive sudo*, not
+# the privilege. Membership of the docker group is already root-equivalent on
+# the host. The win is that a remote node runs unattended and reproducibly,
+# not that anything has been sandboxed.
+services:
+  jetson:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: jetson-flash-node:latest
+    container_name: jetson-flash-node
+    privileged: true
+    network_mode: host
+    volumes:
+      # NVIDIA's BSP tree. Bind-mounted, never baked into the image: ~15 GB,
+      # theirs to redistribute, and versioned independently of this repo.
+      - ${L4T_HOST_DIR:-/srv/build/l4t}:/opt/l4t
+      # USB, including the by-id symlink farm the tools resolve boards through.
+      - /dev/bus/usb:/dev/bus/usb
+      - /dev/serial:/dev/serial
+      # Somewhere to leave screenshots and logs where the host can read them.
+      - ${OUT_DIR:-./out}:/out
+    environment:
+      L4T_DIR: /opt/l4t
+    working_dir: /opt/jetson
