@@ -42,6 +42,8 @@ docker/entrypoint.sh   subcommand dispatch
 docker-compose.yml     privileges and bind mounts
 scripts/node           host driver, wraps docker compose
 scripts/probe.sh       reachability check, run this first
+scripts/host-setup.sh  udev: stable /dev/hdmi-capture, keep ModemManager off the Jetson's serial gadget
+scripts/host-tailscale.sh  install Tailscale for remote access
 scripts/l4t-prepare.sh unpack an L4T BSP into a flashable tree
 scripts/l4t-preseed.sh user, autologin, no blanking, power model
 scripts/l4t-flash.sh   flash, with board config and device tree selection
