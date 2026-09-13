@@ -91,6 +91,23 @@ if [[ ${AUTOLOGIN} -eq 1 ]]; then
   echo "  added ${USERNAME} to nopasswdlogin"
 fi
 
+# gnome-initial-setup runs on first login as a modal, focus-grabbing window --
+# the "Welcome to Ubuntu" tour. On a headless/automated bench it just sits in
+# front of everything blocking input, so mark it done for the pre-seeded user
+# and for any future user via /etc/skel.
+echo
+echo "suppressing the first-login setup wizard"
+for home in "${RFS}/home/${USERNAME}" "${RFS}/etc/skel"; do
+  install -d "${home}/.config"
+  echo yes > "${home}/.config/gnome-initial-setup-done"
+done
+# The account l4t_create_default_user.sh makes is uid/gid 1000; match it so the
+# marker is readable as that user rather than root-owned in their home.
+if [[ -d ${RFS}/home/${USERNAME}/.config ]]; then
+  chown -R 1000:1000 "${RFS}/home/${USERNAME}/.config" 2>/dev/null || true
+fi
+echo "  wrote gnome-initial-setup-done for ${USERNAME} and /etc/skel"
+
 if [[ ${NOBLANK} -eq 1 ]]; then
   echo
   echo "disabling screen blanking"
