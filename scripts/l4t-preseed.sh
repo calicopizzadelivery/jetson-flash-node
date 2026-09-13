@@ -63,6 +63,34 @@ fi
 
 RFS="${TREE}/rootfs"
 
+if [[ ${AUTOLOGIN} -eq 1 ]]; then
+  echo
+  echo "enabling automatic login for ${USERNAME}"
+  # Set this directly rather than relying on l4t_create_default_user.sh -a:
+  # that tool only configures autologin as part of creating the account, so on
+  # a re-run where the user already exists the flag silently does nothing.
+  GDM_CONF="${RFS}/etc/gdm3/custom.conf"
+  if [[ -f ${GDM_CONF} ]]; then
+    # Drop any existing directives, commented or not, then add ours under
+    # [daemon] so repeated runs cannot accumulate duplicates.
+    sed -i -E '/^[#[:space:]]*Automatic(Login|LoginEnable)[[:space:]]*=/d' "${GDM_CONF}"
+    sed -i "0,/^\[daemon\]/s//[daemon]\nAutomaticLoginEnable = true\nAutomaticLogin = ${USERNAME}/" "${GDM_CONF}"
+    echo "  gdm3/custom.conf: AutomaticLogin = ${USERNAME}"
+  else
+    echo "  warning: ${GDM_CONF} not found; autologin not set" >&2
+  fi
+
+  # The desktop user must own its session bus and seat; l4t's default groups
+  # already cover this, but nopasswdlogin is what lets GDM skip the prompt on
+  # some configurations.
+  if ! grep -q '^nopasswdlogin:' "${RFS}/etc/group" 2>/dev/null; then
+    echo "nopasswdlogin:x:501:${USERNAME}" >> "${RFS}/etc/group"
+  else
+    sed -i "s/^\(nopasswdlogin:x:[0-9]*:\)\(.*\)$/\1${USERNAME}/" "${RFS}/etc/group"
+  fi
+  echo "  added ${USERNAME} to nopasswdlogin"
+fi
+
 if [[ ${NOBLANK} -eq 1 ]]; then
   echo
   echo "disabling screen blanking"

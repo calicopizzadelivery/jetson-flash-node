@@ -13,7 +13,7 @@ than depending on an interactive `sudo` on one particular machine.
 ./scripts/node recovery    # put the module into USB recovery (RCM)
 ./scripts/node flash       # run the L4T flash
 ./scripts/node power cycle # back-feed-aware power cycle
-./scripts/node preseed --user flippy --password flippy --hostname jetson-nano
+./scripts/node preseed --user flippy --password flippy --hostname jetson-nano --autologin
 ./scripts/node hdmi grab -o /out/screen.png
 ./scripts/node shell
 ```
@@ -43,7 +43,7 @@ docker-compose.yml     privileges and bind mounts
 scripts/node           host driver, wraps docker compose
 scripts/probe.sh       reachability check, run this first
 scripts/l4t-prepare.sh unpack an L4T BSP into a flashable tree
-scripts/l4t-preseed.sh create the user, disable blanking, set the power model
+scripts/l4t-preseed.sh user, autologin, no blanking, power model
 scripts/l4t-flash.sh   flash, with board config and device tree selection
 tools/                 relay control, recovery sequencing, HDMI capture
 ```
