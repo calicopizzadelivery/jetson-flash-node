@@ -13,6 +13,7 @@ than depending on an interactive `sudo` on one particular machine.
 ./scripts/node recovery    # put the module into USB recovery (RCM)
 ./scripts/node flash       # run the L4T flash
 ./scripts/node power cycle # back-feed-aware power cycle
+./scripts/node preseed --user flippy --password flippy --hostname jetson-nano
 ./scripts/node hdmi grab -o /out/screen.png
 ./scripts/node shell
 ```
@@ -42,6 +43,7 @@ docker-compose.yml     privileges and bind mounts
 scripts/node           host driver, wraps docker compose
 scripts/probe.sh       reachability check, run this first
 scripts/l4t-prepare.sh unpack an L4T BSP into a flashable tree
+scripts/l4t-preseed.sh create the user, disable blanking, set the power model
 scripts/l4t-flash.sh   flash, with board config and device tree selection
 tools/                 relay control, recovery sequencing, HDMI capture
 ```
@@ -52,6 +54,25 @@ Point `L4T_HOST_DIR` at it (default `/srv/build/l4t`), or run `prepare` once to
 build one.
 
 ## Things that cost time, written down
+
+**Never `chown -R` over the L4T tree.** This one cost a day.
+
+`chown` clears setuid and setgid bits whenever a file changes owner — a kernel
+safeguard so a setuid binary cannot be handed to a new owner. A recursive chown
+anywhere over `Linux_for_Tegra` therefore strips setuid from all 23 such
+binaries in `rootfs/`: `sudo`, `su`, `passwd`, `pkexec`,
+`dbus-daemon-launch-helper`.
+
+Those get flashed to the target. There, `sudo` refuses to run
+(`must be owned by uid 0 and have the setuid bit set`) and GDM's greeter never
+starts, because it depends on exactly those helpers. The board shows the NVIDIA
+splash, then a console, then **a blank screen** — which presents as an HDMI
+fault and gets chased as one, on the wrong side of the cable entirely.
+
+`l4t-flash.sh` now refuses to flash a rootfs with fewer than five setuid
+binaries, and `probe` reports the count, so this cannot recur silently. Recover
+by re-extracting the rootfs and re-running `prepare`; permissions come back from
+the tarball.
 
 **`flash.sh` gates on `$USER`, not the uid.** It tests
 `[ "${USER}" != "root" ]`, and Docker sets no `USER` by default, so a genuinely

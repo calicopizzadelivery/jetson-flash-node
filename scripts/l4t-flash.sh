@@ -50,6 +50,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --dtb)   DTB="${2:-}"; shift 2 ;;
     --board) BOARD="${2:-}"; shift 2 ;;
+    --skip-rootfs-check) SKIP_ROOTFS_CHECK=1; shift ;;
     *) echo "usage: $0 [--board <name>] [--dtb auto|<name>.dtb]" >&2; exit 2 ;;
   esac
 done
@@ -106,6 +107,35 @@ else
   fi
   export DTBFILE="${TREE}/kernel/dtb/${DTB}"
 fi
+
+# Rootfs integrity: a tree with no setuid binaries has been damaged, and the
+# damage is invisible until the target boots.
+#
+# chown clears setuid and setgid bits whenever a file changes owner, so a single
+# "chown -R" anywhere over this tree silently strips sudo, su, passwd, pkexec
+# and dbus-daemon-launch-helper. Flashing that produces a board where sudo
+# refuses to run and GDM's greeter never starts: NVIDIA splash, console, then a
+# blank screen. It presents as a display fault and is chased as one.
+#
+# R32.7.6 ships 23 setuid files. Anything near zero means the tree needs
+# re-extracting, not flashing.
+suid_count=$(find "${TREE}/rootfs" -type f -perm -4000 2>/dev/null | wc -l)
+if [[ ${suid_count} -lt 5 ]]; then
+  cat >&2 <<MSG
+error: ${TREE}/rootfs has ${suid_count} setuid binaries; it should have ~23.
+
+Something has run chown over the tree and stripped them. Flashing this gives a
+target with no working sudo and no desktop session. Re-extract the rootfs:
+
+  rm -rf ${TREE}/rootfs && mkdir -p ${TREE}/rootfs
+  tar -xpf <sample-rootfs>.tbz2 -C ${TREE}/rootfs
+  <prepare>   # re-run apply_binaries
+
+Pass --skip-rootfs-check only if you genuinely mean to flash this.
+MSG
+  [[ ${SKIP_ROOTFS_CHECK:-0} -eq 1 ]] || exit 1
+fi
+echo "rootfs: ${suid_count} setuid binaries present"
 
 echo "flashing ${BOARD} -> ${TARGET}"
 echo "  device tree: ${DTB}$([ "${DTB}" = auto ] && echo "  (detection decides, from the module's own FAB)")"

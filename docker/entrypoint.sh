@@ -18,6 +18,8 @@ jetson-flash-node
   flash [args]    run L4T flash.sh  (--board, --dtb; defaults suit a matched
                   FAB 300+ module on a B01 carrier)
   prepare         unpack an L4T BSP into a flashable tree
+  preseed         create the user account before flashing, so oem-config
+                  never runs (--user, --password, --hostname, --autologin)
   hdmi <cmd>      grab | status  -- read the target's HDMI output
   probe           report what the container can see: USB, serial, L4T tree
   shell           interactive bash
@@ -37,6 +39,7 @@ case "${1:-help}" in
   relay)          shift; exec python3 /opt/jetson/tools/relayctl.py "$@" ;;
   hdmi)           shift; exec python3 /opt/jetson/tools/hdmi.py "$@" ;;
   prepare)        shift; exec /opt/jetson/scripts/l4t-prepare.sh "$@" ;;
+  preseed)        shift; exec /opt/jetson/scripts/l4t-preseed.sh "$@" ;;
   flash)          shift; exec /opt/jetson/scripts/l4t-flash.sh "$@" ;;
   *)              echo "unknown command: $1" >&2; echo >&2; usage >&2; exit 2 ;;
 esac

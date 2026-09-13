@@ -27,6 +27,16 @@ printf '  relay boards: %s\n' "$(ls /dev/serial/by-id/ 2>/dev/null | grep -ci qt
 printf '  serial ports: %s\n' "$(ls /dev/ttyACM* /dev/ttyUSB* 2>/dev/null | tr '\n' ' ' || echo none)"
 printf '  video nodes : %s\n' "$(ls /dev/video* 2>/dev/null | tr '\n' ' ' || echo none)"
 
+echo "=== rootfs integrity ==="
+suid=$(find "${L4T_DIR}/Linux_for_Tegra/rootfs" -type f -perm -4000 2>/dev/null | wc -l)
+if [ "${suid}" -ge 5 ]; then
+  printf '  [ ok ] %s setuid binaries in the rootfs\n' "${suid}"; ok=$((ok+1))
+else
+  printf '  [FAIL] only %s setuid binaries in the rootfs (expect ~23)\n' "${suid}"
+  printf '         a chown -R over this tree strips them; re-extract before flashing\n'
+  bad=$((bad+1))
+fi
+
 echo "=== toolchain ==="
 for t in flash.sh dtc python3 lbzip2 qemu-aarch64-static gst-launch-1.0; do
   if [ "$t" = flash.sh ]; then chk "$t" "[ -x ${L4T_DIR}/Linux_for_Tegra/flash.sh ]"
