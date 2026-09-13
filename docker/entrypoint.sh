@@ -21,6 +21,7 @@ jetson-flash-node
   preseed         create the user account before flashing, so oem-config
                   never runs (--user, --password, --hostname, --autologin)
   hdmi <cmd>      grab | status  -- read the target's HDMI output
+  run <cmd>...    run shell commands on the target over its serial console
   probe           report what the container can see: USB, serial, L4T tree
   shell           interactive bash
   help            this text
@@ -38,6 +39,7 @@ case "${1:-help}" in
   power)          shift; exec python3 /opt/jetson/tools/jetson-power.py "$@" ;;
   relay)          shift; exec python3 /opt/jetson/tools/relayctl.py "$@" ;;
   hdmi)           shift; exec python3 /opt/jetson/tools/hdmi.py "$@" ;;
+  run)            shift; exec python3 /opt/jetson/tools/target-run.py "$@" ;;
   prepare)        shift; exec /opt/jetson/scripts/l4t-prepare.sh "$@" ;;
   preseed)        shift; exec /opt/jetson/scripts/l4t-preseed.sh "$@" ;;
   flash)          shift; exec /opt/jetson/scripts/l4t-flash.sh "$@" ;;

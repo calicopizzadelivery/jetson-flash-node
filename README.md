@@ -47,7 +47,8 @@ scripts/host-tailscale.sh  install Tailscale for remote access
 scripts/l4t-prepare.sh unpack an L4T BSP into a flashable tree
 scripts/l4t-preseed.sh user, autologin, no blanking, power model
 scripts/l4t-flash.sh   flash, with board config and device tree selection
-tools/                 relay control, recovery sequencing, HDMI capture
+tools/                 relay control, recovery sequencing, HDMI capture,
+                       serial command execution on the target
 ```
 
 The L4T tree is **bind-mounted, never baked into the image**: it is ~15 GB, it
